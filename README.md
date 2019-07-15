@@ -25,4 +25,4 @@ This project is on the [MIT license](https://github.com/flifloo/SecureSocketServ
 <h2>Projects that use the SSS</h2>
 
 * [Morpion](https://github.com/flifloo/Morpion)
-* More soon !
+* [PyTchat](https://github.com/flifloo/PyTchat)
