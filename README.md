@@ -1,3 +1,5 @@
+![SecureSocketService Logo](https://flifloo.fr/images/Secure%20Socket%20Service.png)
+
 <h1>Secure Socket Service</h1>
 
 A simple but useful socket service I will use and update in the course of my projects
