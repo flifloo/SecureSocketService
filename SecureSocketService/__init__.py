@@ -14,6 +14,7 @@ class Socket:
         """Self
         Socket service with security system"""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Set the socket object
+        self.service_id = 0
         self.key = None  # Set the key encryption
         self.fernet = None  # Set the encryption object
 
@@ -113,31 +114,31 @@ class Socket:
             raise ConnectionError("Invalid key !")
         return True
 
-    def connect_server(self, sock: socket.socket, host: str, port: int, service_id: int, encryption=True):
+    def connect_server(self, host: str, port: int, encryption=True):
         """self, sock (socket), host (str), port (int), service_id (int), encryption (bool)
-        Connect a socket to a socket server"""
+        Connect to a socket server"""
         try:  # Try to connect, else raise a custom error
-            sock.connect((host, port))
+            self.socket.connect((host, port))
         except socket.error:
             raise ConnectionError("Can't connect to server !")
         else:
             if encryption:  # Set secure connexion is asked
                 self.get_secure_connexion(self.socket)
 
-            self.send(sock, f"Client service ID: {service_id}")  # Check if service id match
-            if self.receive(sock) != f"Server service ID: {service_id}":
+            self.send(self.socket, f"Client service ID: {self.service_id}")  # Check if service id match
+            if self.receive(self.socket) != f"Server service ID: {self.service_id}":
                 raise ConnectionError("Server service ID")
             return True
 
-    def connect_client(self, sock: socket, service_id: int, encryption=True):
+    def connect_client(self, encryption=True):
         """self, sock (socket), service_id (int), encryption (bool)
-        Connect a socket server to a socket"""
-        connexion, address = sock.accept()  # Await for connexion
+        Connect a socket client to the server"""
+        connexion, address = self.socket.accept()  # Await for connexion
         if encryption:
             self.set_secure_connexion(connexion)
 
-        if self.receive(connexion) == f"Client service ID: {service_id}":  # Check if service id match
-            self.send(connexion, f"Server service ID: {service_id}")
-            return connexion
+        if self.receive(connexion) == f"Client service ID: {self.service_id}":  # Check if service id match
+            self.send(connexion, f"Server service ID: {self.service_id}")
+            return connexion, address
         else:
             raise ConnectionError("Invalid client service ID !")
