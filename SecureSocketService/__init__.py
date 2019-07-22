@@ -18,11 +18,11 @@ class Socket:
         self.key = None  # Set the key encryption
         self.fernet = None  # Set the encryption object
 
-    def send(self, sock: socket.socket, message: str, encryption=True):
-        """self, sock (socket), message (str), encryption (bool)
-        Send a message with a specific socket, encrypted if available"""
-        if type(message) != bytes:  # If the message are not a bytes type, encode in Utf8
-            message = message.encode("Utf8")
+    def send(self, sock: socket.socket, message: str, encode="Utf8", encryption=True):
+        """self, sock (socket), message (str), encode (str/bool): Utf8, encryption (bool)
+        Send a message with a specific socket, encode and encrypted if available"""
+        if type(message) == str and encode:  # If the message are str type, encode if available
+            message = message.encode(encode)
         if self.fernet and encryption:  # Encrypt if available
             message = self.fernet.encrypt(message)
         try:  # Try to send, if fail raise a custom error
@@ -32,18 +32,18 @@ class Socket:
         else:
             return True
 
-    def receive(self, sock: socket.socket, utf8=True, encryption=True):
-        """self, sock (socket), utf8 (bool), encryption (bool)
+    def receive(self, sock: socket.socket, decode="Utf8", encryption=True):
+        """self, sock (socket), utf8 (str/bool): Utf8, encryption (bool)
         Receive a message from a socket"""
         try:  # Try to receive, else raise a custom error
             response = sock.recv(1028)
         except socket.error:
             raise ConnectionError("Fail to receive")
         else:
-            if self.fernet and encryption:  # Encrypt if available
+            if self.fernet and encryption and response != b"":  # Encrypt if available
                 response = self.fernet.decrypt(response)
-            if utf8:  # decode the utf8 by default
-                response = response.decode("Utf8")
+            if decode:  # decode the utf8 by default
+                response = response.decode(decode)
             return response
 
     def set_secure_connexion(self, sock: socket.socket):
@@ -53,7 +53,7 @@ class Socket:
             self.key = Fernet.generate_key()
             self.fernet = Fernet(self.key)
 
-        # Receive the public key of the targed socket
+        # Receive the public key of the target socket
         public_key = serialization.load_pem_public_key(
             self.receive(sock, False, False),
             backend=default_backend()
