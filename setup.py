@@ -7,7 +7,7 @@ def readme():
 
 
 setup(name="SecureSocketService",
-      version="1.0.1",
+      version="1.0.3",
       description="A socket service with secure connexion",
       long_description=readme(),
       classifiers=[

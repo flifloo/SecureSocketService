@@ -26,6 +26,7 @@ class Socket:
         if self.fernet and encryption:  # Encrypt if available
             message = self.fernet.encrypt(message)
         try:  # Try to send, if fail raise a custom error
+            sock.send(f"Buffer size: {len(message)}".encode("Utf8"))
             sock.send(message)
         except socket.error:
             raise ConnectionError("Fail to send")
@@ -33,11 +34,12 @@ class Socket:
             return True
 
     def receive(self, sock: socket.socket, decode="Utf8", encryption=True):
-        """self, sock (socket), utf8 (str/bool): Utf8, encryption (bool)
+        """self, sock (socket), decode (str): Utf8, encryption (bool)
         Receive a message from a socket"""
         try:  # Try to receive, else raise a custom error
-            response = sock.recv(1028)
-        except socket.error:
+            buffer_size = int(sock.recv(1028).decode("Utf8")[13:])
+            response = sock.recv(buffer_size)
+        except (socket.error, ValueError):
             raise ConnectionError("Fail to receive")
         else:
             if self.fernet and encryption and response != b"":  # Encrypt if available
@@ -55,12 +57,13 @@ class Socket:
 
         # Receive the public key of the target socket
         public_key = serialization.load_pem_public_key(
-            self.receive(sock, False, False),
+            self.receive(sock, "", False),
             backend=default_backend()
         )
 
         # Encrypt the key and send back with private key encryption to the target socket
-        sock.send(
+        self.send(
+            sock,
             public_key.encrypt(
                 self.key,
                 padding.OAEP(
@@ -68,7 +71,9 @@ class Socket:
                     algorithm=hashes.SHA256(),
                     label=None
                 )
-            )
+            ),
+            "",
+            False
         )
 
         if self.receive(sock) == "Key receive":  # Check if the kay is valid
