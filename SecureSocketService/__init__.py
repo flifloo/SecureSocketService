@@ -14,6 +14,7 @@ class Socket:
         """Self
         Socket service with security system"""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # Set the socket object
+        self.buffer_size = 8
         self.service_id = 0
         self.key = None  # Set the key encryption
         self.fernet = None  # Set the encryption object
@@ -26,7 +27,10 @@ class Socket:
         if self.fernet and encryption:  # Encrypt if available
             message = self.fernet.encrypt(message)
         try:  # Try to send, if fail raise a custom error
-            sock.send(f"Buffer size: {len(message)}".encode("Utf8"))
+            buffer_size = str(len(message))
+            while len(buffer_size) != self.buffer_size:
+                buffer_size = "0" + buffer_size
+            sock.send(buffer_size.encode("Utf8"))
             sock.send(message)
         except socket.error:
             raise ConnectionError("Fail to send")
@@ -37,8 +41,9 @@ class Socket:
         """self, sock (socket), decode (str): Utf8, encryption (bool)
         Receive a message from a socket"""
         try:  # Try to receive, else raise a custom error
-            buffer_size = int(sock.recv(1028).decode("Utf8")[13:])
-            response = sock.recv(buffer_size)
+            buffer_size = int(sock.recv(self.buffer_size, socket.MSG_WAITALL).decode("Utf8"))
+            print(buffer_size)
+            response = sock.recv(buffer_size, socket.MSG_WAITALL)
         except (socket.error, ValueError):
             raise ConnectionError("Fail to receive")
         else:
@@ -67,8 +72,8 @@ class Socket:
             public_key.encrypt(
                 self.key,
                 padding.OAEP(
-                    mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                    algorithm=hashes.SHA256(),
+                    mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                    algorithm=hashes.SHA512(),
                     label=None
                 )
             ),
@@ -104,10 +109,10 @@ class Socket:
 
         # Decrypt the receive key with the private key and set it
         self.key = private_key.decrypt(
-            self.receive(sock, False, False),
+            self.receive(sock, "", False),
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
+                mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                algorithm=hashes.SHA512(),
                 label=None
             )
         )
