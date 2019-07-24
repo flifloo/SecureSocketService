@@ -42,7 +42,6 @@ class Socket:
         Receive a message from a socket"""
         try:  # Try to receive, else raise a custom error
             buffer_size = int(sock.recv(self.buffer_size, socket.MSG_WAITALL).decode("Utf8"))
-            print(buffer_size)
             response = sock.recv(buffer_size, socket.MSG_WAITALL)
         except (socket.error, ValueError):
             raise ConnectionError("Fail to receive")
