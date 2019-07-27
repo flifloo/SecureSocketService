@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.fernet import Fernet
-
+import ssl
 
 class Socket:
     """Self
@@ -126,6 +126,9 @@ class Socket:
     def connect_server(self, host: str, port: int, encryption=True):
         """self, sock (socket), host (str), port (int), service_id (int), encryption (bool)
         Connect to a socket server"""
+        self.context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.context.load_default_certs(ssl.Purpose.SERVER_AUTH)
+        self.socket = self.context.wrap_socket(self.socket, server_side=False)
         try:  # Try to connect, else raise a custom error
             self.socket.connect((host, port))
         except socket.error:
@@ -142,6 +145,9 @@ class Socket:
     def connect_client(self, encryption=True):
         """self, sock (socket), service_id (int), encryption (bool)
         Connect a socket client to the server"""
+        self.context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.context.load_default_certs(ssl.Purpose.CLIENT_AUTH)
+        self.socket = self.context.wrap_socket(self.socket, server_side=True)
         connexion, address = self.socket.accept()  # Await for connexion
         if encryption:
             self.set_secure_connexion(connexion)

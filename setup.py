@@ -22,6 +22,6 @@ setup(name="SecureSocketService",
       license="MIT",
       packages=find_packages(),
       install_requires=[
-            'cryptography',
+            'cryptography','ssl'
       ],
       zip_safe=False)
